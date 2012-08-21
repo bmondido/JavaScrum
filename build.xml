@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project JavaScrum">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/home/mondido/csc105/workspace/JavaScrum/ContactManager.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="edu.neumont.csc105.contactmanager.ContactManager"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="/home/mondido/csc105/workspace/JavaScrum/bin"/>
+        </jar>
+    </target>
+</project>
