@@ -33,61 +33,55 @@ import javax.swing.ListModel;
 import javax.swing.border.Border;
 
 public class ContactManager extends JFrame {
-	private File contactFile;
-	private JTextField firstNameField;
-	private JTextField lastNameField;
-	private JTextField emailField;
+	private ContactManagerData data = new ContactManagerData();
 	private JButton saveButton;
 	private JButton loadButton;
 	private JButton addUserButton;
 	private JButton editButton;
 	private JButton clearButton;
-	private JList users;
-	private DefaultListModel model;
-	private int currentUserIndex = -1;
 	private JButton deleteButton;
+	private UserList userList;
 
 	public ContactManager(File f) {
 		super("Contact Manager");
 		if (f == null) {
 			f = new File("contacts.csv");
 		}
-		contactFile = f;
+		data.setContactFile(f);
 		initializeGUI();
 		initListeners();
 	}
 
 	private void doSave() {
-		ArrayList<Person> peopleToSave = new ArrayList<Person>();
-		for (int i = 0; i < model.getSize(); i++) {
-			peopleToSave.add((Person) model.get(i));
-		}
-
-		contactFile.delete();
-		File newContactList = new File("contacts.csv");
-		FileWriter fWriter = null;
-		BufferedWriter textWriter = null;
-		try {
-			fWriter = new FileWriter(newContactList);
-			textWriter = new BufferedWriter(fWriter);
-			for (Person p : peopleToSave) {
-				textWriter.write(p.toString() + "\n");
+		if(userList.getModel().getSize()>0){
+			ArrayList<Person> peopleToSave = new ArrayList<Person>();
+			for (int i = 0; i < userList.getModel().getSize(); i++) {
+				peopleToSave.add((Person) userList.getModel().get(i));
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
+	
+			data.getContactFile().delete();
+			File newContactList = new File("contacts.csv");
+			FileWriter fWriter = null;
+			BufferedWriter textWriter = null;
 			try {
-				textWriter.close();
-				fWriter.close();
+				fWriter = new FileWriter(newContactList);
+				textWriter = new BufferedWriter(fWriter);
+				for (Person p : peopleToSave) {
+					textWriter.write(p.toString() + "\n");
+				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NullPointerException e2) {
-				e2.printStackTrace();
+				throw new RuntimeException(e);
+			} finally {
+				try {
+					textWriter.close();
+					fWriter.close();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				} catch (NullPointerException e2) {
+					throw new RuntimeException(e2);
+				}
 			}
 		}
-
 	}
 
 	private void doLoad() {
@@ -97,31 +91,32 @@ public class ContactManager extends JFrame {
 		if (chosenAFile == JFileChooser.APPROVE_OPTION) {
 			File selectedFile = chooser.getSelectedFile();
 			if (Extension.getExtension(selectedFile).equals(Extension.csv)) {
-				contactFile = selectedFile;
-				model.removeAllElements();
+				data.setContactFile(selectedFile);
+				userList.getModel().removeAllElements();
 				parseUsers();
 			}
 		}
 	}
 
 	private void doAddUser() {
-		String firstName = firstNameField.getText();
-		String lastName = lastNameField.getText();
-		String email = emailField.getText();
+		String firstName = data.getFirstNameField().getText();
+		String lastName = data.getLastNameField().getText();
+		String email = data.getEmailField().getText();
 		if (!firstName.isEmpty() && !lastName.isEmpty() && !email.isEmpty()) {
 			Person p = new Person(firstName, lastName, email);
-			if (currentUserIndex < 0) {
-				model.addElement(p);
+			if (userList.getCurrentUserIndex() < 0) {
+				userList.getModel().addElement(p);
+				doClearFields();
 			}
 		}
 	}
 
 	private void doEditUser(int index) {
 		if(index>-1){
-			Person p = (Person) model.get(index);
-			String firstName = firstNameField.getText();
-			String lastName = lastNameField.getText();
-			String email = emailField.getText();
+			Person p = (Person) userList.getModel().get(index);
+			String firstName = data.getFirstNameField().getText();
+			String lastName = data.getLastNameField().getText();
+			String email = data.getEmailField().getText();
 			if (!firstName.isEmpty() && !firstName.equals(p.getFirstName())) {
 				p.setFirstName(firstName);
 			}
@@ -132,42 +127,43 @@ public class ContactManager extends JFrame {
 				p.setEmail(email);
 			}
 	
-			model.set(index, p);
+			userList.getModel().set(index, p);
 		}
 	}
 	
 	private void doDeleteUser(int index){
 		if(index>-1){
-			model.remove(index);
-			model.trimToSize();
-			currentUserIndex=-1;
-			deleteButton.setVisible(false);
-			addUserButton.setVisible(true);
-			editButton.setVisible(false);
+			userList.getModel().remove(index);
+			userList.getModel().trimToSize();
+			doClearFields();
 		}
 	}
 
 	private void doClearFields() {
-		currentUserIndex = -1;
+		userList.setCurrentUserIndex(-1);
 		deleteButton.setVisible(false);
 		addUserButton.setVisible(true);
 		editButton.setVisible(false);
-		firstNameField.setText("");
-		lastNameField.setText("");
-		emailField.setText("");
+		clearTextFields();
+	}
+
+	private void clearTextFields() {
+		data.getFirstNameField().setText("");
+		data.getLastNameField().setText("");
+		data.getEmailField().setText("");
 	}
 
 	private void initListeners() {
 
-		users.addMouseListener(new MouseAdapter() {
+		userList.getUsers().addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				int index = users.locationToIndex(e.getPoint());
-				Person p = (Person) model.get(index);
-				firstNameField.setText(p.getFirstName());
-				lastNameField.setText(p.getLastName());
-				emailField.setText(p.getEmail());
-				currentUserIndex = index;
+				int index = userList.getUsers().locationToIndex(e.getPoint());
+				Person p = (Person) userList.getModel().get(index);
+				data.getFirstNameField().setText(p.getFirstName());
+				data.getLastNameField().setText(p.getLastName());
+				data.getEmailField().setText(p.getEmail());
+				userList.setCurrentUserIndex(index);
 				deleteButton.setVisible(true);
 				addUserButton.setVisible(false);
 				editButton.setVisible(true);
@@ -202,7 +198,7 @@ public class ContactManager extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				doEditUser(currentUserIndex);
+				doEditUser(userList.getCurrentUserIndex());
 
 			}
 		});
@@ -220,7 +216,7 @@ public class ContactManager extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				doDeleteUser(currentUserIndex);
+				doDeleteUser(userList.getCurrentUserIndex());
 				
 			}
 		});
@@ -235,23 +231,23 @@ public class ContactManager extends JFrame {
 		JPanel firstNamePanel = new JPanel();
 		userDataPanel.add(firstNamePanel);
 		JLabel firstNameLabel = new JLabel("FirstName");
-		firstNameField = new JTextField(20);
+		data.setFirstNameField(new JTextField(20));
 		firstNamePanel.add(firstNameLabel, BorderLayout.WEST);
-		firstNamePanel.add(firstNameField, BorderLayout.EAST);
+		firstNamePanel.add(data.getFirstNameField(), BorderLayout.EAST);
 
 		JPanel lastNamePanel = new JPanel();
 		userDataPanel.add(lastNamePanel);
 		JLabel lastNameLabel = new JLabel("LastName");
-		lastNameField = new JTextField(20);
+		data.setLastNameField(new JTextField(20));
 		lastNamePanel.add(lastNameLabel, BorderLayout.WEST);
-		lastNamePanel.add(lastNameField, BorderLayout.EAST);
+		lastNamePanel.add(data.getLastNameField(), BorderLayout.EAST);
 
 		JPanel emailPanel = new JPanel();
 		userDataPanel.add(emailPanel);
 		JLabel emailLabel = new JLabel("Email");
-		emailField = new JTextField(20);
+		data.setEmailField(new JTextField(20));
 		emailPanel.add(emailLabel, BorderLayout.WEST);
-		emailPanel.add(emailField, BorderLayout.EAST);
+		emailPanel.add(data.getEmailField(), BorderLayout.EAST);
 
 		addUserButton = new JButton("Add User");
 		addUserButton.setPreferredSize(new Dimension(100, 50));
@@ -276,13 +272,12 @@ public class ContactManager extends JFrame {
 		loadButton.setPreferredSize(new Dimension(100, 50));
 		buttonPanel.add(loadButton);
 		this.add(buttonPanel, BorderLayout.SOUTH);
-
 		this.add(userDataPanel, BorderLayout.WEST);
-		model = new DefaultListModel();
-		users = new JList(model);
+		
+		userList=new UserList();
 		parseUsers();
 		final JScrollPane userScrollPanel = new JScrollPane();
-		userScrollPanel.getViewport().add(users);
+		userScrollPanel.getViewport().add(userList.getUsers());
 		this.add(userScrollPanel, BorderLayout.EAST);
 		this.setVisible(true);
 	}
@@ -292,7 +287,7 @@ public class ContactManager extends JFrame {
 		FileReader fReader = null;
 		BufferedReader textReader = null;
 		try {
-			fReader = new FileReader(contactFile);
+			fReader = new FileReader(data.getContactFile());
 			textReader = new BufferedReader(fReader);
 
 			String readIn;
@@ -307,11 +302,9 @@ public class ContactManager extends JFrame {
 				people.add(p);
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		} finally {
 			if (fReader != null) {
 				try {
@@ -323,7 +316,7 @@ public class ContactManager extends JFrame {
 			}
 		}
 		for (Person p : people) {
-			model.addElement(p);
+			userList.getModel().addElement(p);
 		}
 	}
 
