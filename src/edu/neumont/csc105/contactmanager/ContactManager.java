@@ -16,6 +16,7 @@ import java.util.Iterator;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -78,7 +79,17 @@ public class ContactManager extends JFrame{
 	}
 	
 	private void doLoad(){
+		JFileChooser chooser=new JFileChooser();
+		int chosenAFile=chooser.showOpenDialog(null);
 		
+		if(chosenAFile==JFileChooser.APPROVE_OPTION){
+			File selectedFile=chooser.getSelectedFile();
+			if(Extension.getExtension(selectedFile).equals(Extension.csv)){
+				contactFile=selectedFile;
+				model.removeAllElements();
+				parseUsers();
+			}
+		}
 	}
 	
 	private void doAddUser(){
@@ -163,14 +174,15 @@ public class ContactManager extends JFrame{
 		this.add(userDataPanel,BorderLayout.WEST);
 		model=new DefaultListModel();
 		users=new JList(model);
-		parseUsers(model);
+		parseUsers();
 		final JScrollPane userScrollPanel=new JScrollPane();
 		userScrollPanel.getViewport().add(users);
 		this.add(userScrollPanel,BorderLayout.EAST);
 		this.setVisible(true);
 	}
 	
-	private void parseUsers(DefaultListModel model){
+	
+private void parseUsers(){
 		ArrayList<Person> people=new ArrayList<Person>();
 		FileReader fReader=null;
 		BufferedReader textReader=null;
