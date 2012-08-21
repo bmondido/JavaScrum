@@ -1,6 +1,6 @@
 package edu.neumont.csc105.contactmanager;
 
-public class Person {
+public class Person implements Comparable<Person>{
 	private String firstName;
 	private String lastName;
 	private String email;
@@ -9,6 +9,10 @@ public class Person {
 		setFirstName(fName);
 		setLastName(lName);
 		setEmail(email);
+	}
+	
+	public Person() {
+		
 	}
 
 	public String getFirstName() {
@@ -78,6 +82,12 @@ public class Person {
 		} else if (!lastName.equals(other.lastName))
 			return false;
 		return true;
+	}
+
+	@Override
+	public int compareTo(Person o) {
+		
+		return 0;
 	}
 	
 	

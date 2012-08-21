@@ -32,6 +32,7 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -50,19 +51,18 @@ public class ContactManager extends JFrame {
 		if (fileName == null || fileName.isEmpty()) {
 			try {
 				new File("contacts.csv").createNewFile();
-				f=new File("contacts.csv");
+				f = new File("contacts.csv");
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		}
-		else{
+		} else {
 			try {
 				new File(fileName).createNewFile();
-				f=new File(fileName);
+				f = new File(fileName);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-			
+
 		}
 		data.setContactFile(f);
 		initializeGUI();
@@ -70,12 +70,12 @@ public class ContactManager extends JFrame {
 	}
 
 	private void doSave() {
-		if(userList.getModel().getSize()>0){
+		if (userList.getModel().getSize() > 0) {
 			ArrayList<Person> peopleToSave = new ArrayList<Person>();
 			for (int i = 0; i < userList.getModel().getSize(); i++) {
 				peopleToSave.add((Person) userList.getModel().get(i));
 			}
-			String fileName=data.getContactFile().getName();
+			String fileName = data.getContactFile().getName();
 			data.getContactFile().delete();
 			File newContactList = new File(fileName);
 			FileWriter fWriter = null;
@@ -119,17 +119,22 @@ public class ContactManager extends JFrame {
 		String firstName = data.getFirstNameField().getText();
 		String lastName = data.getLastNameField().getText();
 		String email = data.getEmailField().getText();
-		if (!firstName.isEmpty() && !lastName.isEmpty() && !email.isEmpty()) {
+		if (!firstName.isEmpty() && !lastName.isEmpty() && !email.isEmpty() && !firstName.contains(",") && !lastName.contains(",") && !email.contains(",")) {
 			Person p = new Person(firstName, lastName, email);
-			if (userList.getCurrentUserIndex() < 0) {
+			if (!userList.getModel().contains(p)) {
 				userList.getModel().addElement(p);
 				doClearFields();
+			} else {
+				JOptionPane.showMessageDialog(null, "There's already a user with that information");
 			}
+		}
+		else{
+			JOptionPane.showMessageDialog(null, "There's something wrong with the input");
 		}
 	}
 
 	private void doEditUser(int index) {
-		if(index>-1){
+		if (index > -1) {
 			Person p = (Person) userList.getModel().get(index);
 			String firstName = data.getFirstNameField().getText();
 			String lastName = data.getLastNameField().getText();
@@ -143,13 +148,13 @@ public class ContactManager extends JFrame {
 			if (!email.isEmpty() && !email.equals(p.getEmail())) {
 				p.setEmail(email);
 			}
-	
+
 			userList.getModel().set(index, p);
 		}
 	}
-	
-	private void doDeleteUser(int index){
-		if(index>-1){
+
+	private void doDeleteUser(int index) {
+		if (index > -1) {
 			userList.getModel().remove(index);
 			userList.getModel().trimToSize();
 			doClearFields();
@@ -186,22 +191,24 @@ public class ContactManager extends JFrame {
 				JButtonFactory.getButton("edit").setVisible(true);
 			}
 		});
-		JButtonFactory.getButton("save").addActionListener(new ActionListener() {
+		JButtonFactory.getButton("save").addActionListener(
+				new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				doSave();
-			}
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						doSave();
+					}
 
-		});
-		JButtonFactory.getButton("load").addActionListener(new ActionListener() {
+				});
+		JButtonFactory.getButton("load").addActionListener(
+				new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				doLoad();
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						doLoad();
 
-			}
-		});
+					}
+				});
 
 		JButtonFactory.getButton("add").addActionListener(new ActionListener() {
 
@@ -211,49 +218,52 @@ public class ContactManager extends JFrame {
 			}
 		});
 
-		JButtonFactory.getButton("edit").addActionListener(new ActionListener() {
+		JButtonFactory.getButton("edit").addActionListener(
+				new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				doEditUser(userList.getCurrentUserIndex());
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						doEditUser(userList.getCurrentUserIndex());
 
-			}
-		});
+					}
+				});
 
-		JButtonFactory.getButton("clear").addActionListener(new ActionListener() {
+		JButtonFactory.getButton("clear").addActionListener(
+				new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				doClearFields();
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						doClearFields();
 
-			}
-		});
-		
-		JButtonFactory.getButton("delete").addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				doDeleteUser(userList.getCurrentUserIndex());
-				
-			}
-		});
+					}
+				});
+
+		JButtonFactory.getButton("delete").addActionListener(
+				new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						doDeleteUser(userList.getCurrentUserIndex());
+
+					}
+				});
 	}
 
 	private void initializeGUI() {
 		this.setResizable(false);
 		this.setBounds(50, 50, 800, 800);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		MenuBar menuBar=new MenuBar();
-		Menu fileMenu=new Menu("File");
+
+		MenuBar menuBar = new MenuBar();
+		Menu fileMenu = new Menu("File");
 		fileMenu.setShortcut(new MenuShortcut(KeyEvent.VK_F));
-		MenuItem openItem=new MenuItem("Open");
+		MenuItem openItem = new MenuItem("Open");
 		openItem.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				doLoad();
-				
+
 			}
 		});
 		fileMenu.add(openItem);
@@ -283,14 +293,18 @@ public class ContactManager extends JFrame {
 		emailPanel.add(data.getEmailField(), BorderLayout.EAST);
 
 		JButtonFactory.putButton("add", new JButton("Add User"));
-		JButtonFactory.getButton("add").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("add")
+				.setPreferredSize(new Dimension(100, 50));
 		JButtonFactory.putButton("edit", new JButton("Edit User"));
-		JButtonFactory.getButton("edit").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("edit").setPreferredSize(
+				new Dimension(100, 50));
 		JButtonFactory.getButton("edit").setVisible(false);
 		JButtonFactory.putButton("clear", new JButton("Clear"));
-		JButtonFactory.getButton("clear").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("clear").setPreferredSize(
+				new Dimension(100, 50));
 		JButtonFactory.putButton("delete", new JButton("Delete User"));
-		JButtonFactory.getButton("delete").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("delete").setPreferredSize(
+				new Dimension(100, 50));
 		JButtonFactory.getButton("delete").setVisible(false);
 		userDataPanel.add(JButtonFactory.getButton("clear"));
 		userDataPanel.add(JButtonFactory.getButton("edit"));
@@ -299,15 +313,17 @@ public class ContactManager extends JFrame {
 
 		JPanel buttonPanel = new JPanel();
 		JButtonFactory.putButton("save", new JButton("Save"));
-		JButtonFactory.getButton("save").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("save").setPreferredSize(
+				new Dimension(100, 50));
 		buttonPanel.add(JButtonFactory.getButton("save"));
 		JButtonFactory.putButton("load", new JButton("Load"));
-		JButtonFactory.getButton("load").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("load").setPreferredSize(
+				new Dimension(100, 50));
 		buttonPanel.add(JButtonFactory.getButton("load"));
 		this.add(buttonPanel, BorderLayout.SOUTH);
 		this.add(userDataPanel, BorderLayout.WEST);
-		
-		userList=new UserList();
+
+		userList = new UserList();
 		parseUsers();
 		final JScrollPane userScrollPanel = new JScrollPane();
 		userScrollPanel.getViewport().add(userList.getUsers());
