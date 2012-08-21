@@ -3,8 +3,13 @@ package edu.neumont.csc105.contactmanager;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.MenuShortcut;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -24,28 +29,40 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
+import javax.swing.Box.Filler;
 import javax.swing.border.Border;
 
 public class ContactManager extends JFrame {
 	private ContactManagerData data = new ContactManagerData();
-	private JButton saveButton;
-	private JButton loadButton;
-	private JButton addUserButton;
-	private JButton editButton;
-	private JButton clearButton;
-	private JButton deleteButton;
 	private UserList userList;
 
-	public ContactManager(File f) {
+	public ContactManager(String fileName) {
 		super("Contact Manager");
-		if (f == null) {
-			f = new File("contacts.csv");
+		File f;
+		if (fileName == null || fileName.isEmpty()) {
+			try {
+				new File("contacts.csv").createNewFile();
+				f=new File("contacts.csv");
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		else{
+			try {
+				new File(fileName).createNewFile();
+				f=new File(fileName);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			
 		}
 		data.setContactFile(f);
 		initializeGUI();
@@ -58,9 +75,9 @@ public class ContactManager extends JFrame {
 			for (int i = 0; i < userList.getModel().getSize(); i++) {
 				peopleToSave.add((Person) userList.getModel().get(i));
 			}
-	
+			String fileName=data.getContactFile().getName();
 			data.getContactFile().delete();
-			File newContactList = new File("contacts.csv");
+			File newContactList = new File(fileName);
 			FileWriter fWriter = null;
 			BufferedWriter textWriter = null;
 			try {
@@ -141,9 +158,9 @@ public class ContactManager extends JFrame {
 
 	private void doClearFields() {
 		userList.setCurrentUserIndex(-1);
-		deleteButton.setVisible(false);
-		addUserButton.setVisible(true);
-		editButton.setVisible(false);
+		JButtonFactory.getButton("delete").setVisible(false);
+		JButtonFactory.getButton("add").setVisible(true);
+		JButtonFactory.getButton("edit").setVisible(false);
 		clearTextFields();
 	}
 
@@ -164,12 +181,12 @@ public class ContactManager extends JFrame {
 				data.getLastNameField().setText(p.getLastName());
 				data.getEmailField().setText(p.getEmail());
 				userList.setCurrentUserIndex(index);
-				deleteButton.setVisible(true);
-				addUserButton.setVisible(false);
-				editButton.setVisible(true);
+				JButtonFactory.getButton("delete").setVisible(true);
+				JButtonFactory.getButton("add").setVisible(false);
+				JButtonFactory.getButton("edit").setVisible(true);
 			}
 		});
-		saveButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("save").addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -177,7 +194,7 @@ public class ContactManager extends JFrame {
 			}
 
 		});
-		loadButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("load").addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -186,7 +203,7 @@ public class ContactManager extends JFrame {
 			}
 		});
 
-		addUserButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("add").addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -194,7 +211,7 @@ public class ContactManager extends JFrame {
 			}
 		});
 
-		editButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("edit").addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -203,7 +220,7 @@ public class ContactManager extends JFrame {
 			}
 		});
 
-		clearButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("clear").addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -212,7 +229,7 @@ public class ContactManager extends JFrame {
 			}
 		});
 		
-		deleteButton.addActionListener(new ActionListener() {
+		JButtonFactory.getButton("delete").addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -226,6 +243,22 @@ public class ContactManager extends JFrame {
 		this.setResizable(false);
 		this.setBounds(50, 50, 800, 800);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		MenuBar menuBar=new MenuBar();
+		Menu fileMenu=new Menu("File");
+		fileMenu.setShortcut(new MenuShortcut(KeyEvent.VK_F));
+		MenuItem openItem=new MenuItem("Open");
+		openItem.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				doLoad();
+				
+			}
+		});
+		fileMenu.add(openItem);
+		menuBar.add(fileMenu);
+		this.setMenuBar(menuBar);
 
 		final JPanel userDataPanel = new JPanel(new GridLayout(15, 1, 1, 1));
 		JPanel firstNamePanel = new JPanel();
@@ -249,28 +282,28 @@ public class ContactManager extends JFrame {
 		emailPanel.add(emailLabel, BorderLayout.WEST);
 		emailPanel.add(data.getEmailField(), BorderLayout.EAST);
 
-		addUserButton = new JButton("Add User");
-		addUserButton.setPreferredSize(new Dimension(100, 50));
-		editButton = new JButton("Edit User");
-		editButton.setPreferredSize(new Dimension(100, 50));
-		editButton.setVisible(false);
-		clearButton = new JButton("Clear Fields");
-		clearButton.setPreferredSize(new Dimension(100, 50));
-		deleteButton = new JButton("DeleteUser");
-		deleteButton.setPreferredSize(new Dimension(100, 50));
-		deleteButton.setVisible(false);
-		userDataPanel.add(clearButton);
-		userDataPanel.add(editButton);
-		userDataPanel.add(addUserButton);
-		userDataPanel.add(deleteButton);
+		JButtonFactory.putButton("add", new JButton("Add User"));
+		JButtonFactory.getButton("add").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.putButton("edit", new JButton("Edit User"));
+		JButtonFactory.getButton("edit").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("edit").setVisible(false);
+		JButtonFactory.putButton("clear", new JButton("Clear"));
+		JButtonFactory.getButton("clear").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.putButton("delete", new JButton("Delete User"));
+		JButtonFactory.getButton("delete").setPreferredSize(new Dimension(100, 50));
+		JButtonFactory.getButton("delete").setVisible(false);
+		userDataPanel.add(JButtonFactory.getButton("clear"));
+		userDataPanel.add(JButtonFactory.getButton("edit"));
+		userDataPanel.add(JButtonFactory.getButton("add"));
+		userDataPanel.add(JButtonFactory.getButton("delete"));
 
 		JPanel buttonPanel = new JPanel();
-		saveButton = new JButton("Save");
-		saveButton.setPreferredSize(new Dimension(100, 50));
-		buttonPanel.add(saveButton);
-		loadButton = new JButton("Load");
-		loadButton.setPreferredSize(new Dimension(100, 50));
-		buttonPanel.add(loadButton);
+		JButtonFactory.putButton("save", new JButton("Save"));
+		JButtonFactory.getButton("save").setPreferredSize(new Dimension(100, 50));
+		buttonPanel.add(JButtonFactory.getButton("save"));
+		JButtonFactory.putButton("load", new JButton("Load"));
+		JButtonFactory.getButton("load").setPreferredSize(new Dimension(100, 50));
+		buttonPanel.add(JButtonFactory.getButton("load"));
 		this.add(buttonPanel, BorderLayout.SOUTH);
 		this.add(userDataPanel, BorderLayout.WEST);
 		
@@ -321,7 +354,6 @@ public class ContactManager extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		ContactManager contactManager = new ContactManager(new File(
-				"contacts.csv"));
+		ContactManager contactManager = new ContactManager("class.csv");
 	}
 }
