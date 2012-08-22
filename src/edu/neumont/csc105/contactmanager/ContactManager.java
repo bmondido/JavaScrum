@@ -4,6 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -34,15 +37,19 @@ public class ContactManager extends JFrame{
 	private JButton saveButton;
 	private JButton loadButton;
 	private JButton addUserButton;
+	private JButton editButton;
+	private JButton clearButton;
 	private JList users;
 	private DefaultListModel model;
+	private int currentUserIndex=-1;
 	public ContactManager(File f) {
 		super("Contact Manager");
 		if (f == null) {
 			f = new File("contacts.csv");
 		}
-		initializeGUI(f);
-		initButtonListeners();
+		contactFile=f;
+		initializeGUI();
+		initListeners();
 	}
 
 	private void doSave() {
@@ -98,11 +105,50 @@ public class ContactManager extends JFrame{
 		String email = emailField.getText();
 		if(!firstName.isEmpty() && !lastName.isEmpty() && !email.isEmpty()){
 			Person p=new Person(firstName, lastName, email);
-			model.addElement(p);
+			if(currentUserIndex<0){
+				model.addElement(p);
+			}
 		}
 	}
 	
-	private void initButtonListeners() {
+	private void doEditUser(int index){
+		Person p=(Person) model.get(index);
+		String firstName = firstNameField.getText();
+		String lastName = lastNameField.getText();
+		String email = emailField.getText();
+		if(!firstName.isEmpty() && !firstName.equals(p.getFirstName())){
+			p.setFirstName(firstName);
+		}
+		if(!lastName.isEmpty() && !lastName.equals(p.getLastName())){
+			p.setLastName(lastName);
+		}
+		if(!email.isEmpty() && !email.equals(p.getEmail())){
+			p.setEmail(email);
+		}
+		
+		model.set(index, p);
+	}
+	
+	private void doClearFields(){
+		currentUserIndex=-1;
+		firstNameField.setText("");
+		lastNameField.setText("");
+		emailField.setText("");
+	}
+	
+	private void initListeners() {
+		
+		users.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				int index=users.locationToIndex(e.getPoint());
+				Person p=(Person)model.get(index);
+				firstNameField.setText(p.getFirstName());
+				lastNameField.setText(p.getLastName());
+				emailField.setText(p.getEmail());
+				currentUserIndex=index;
+			}
+		});
 		saveButton.addActionListener(new ActionListener() {
 			
 			@Override
@@ -129,16 +175,31 @@ public class ContactManager extends JFrame{
 			}
 		});
 		
+		editButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				doEditUser(currentUserIndex);
+				
+			}
+		});
+		
+		clearButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doClearFields();
+				
+			}
+		});
 	}
 
-	private void initializeGUI(File f) {
-		contactFile = f;
+	private void initializeGUI() {
 		this.setResizable(false);
 		this.setBounds(50,50,800,800);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		GridLayout gridLayout = new GridLayout(6,1,1,1);
-		final JPanel userDataPanel=new JPanel(gridLayout);
+		final JPanel userDataPanel=new JPanel(new GridLayout(6,1,1,1));
 		JPanel firstNamePanel=new JPanel();
 		userDataPanel.add(firstNamePanel);
 		JLabel firstNameLabel=new JLabel("FirstName");
@@ -161,7 +222,10 @@ public class ContactManager extends JFrame{
 		emailPanel.add(emailField,BorderLayout.EAST);
 		
 		addUserButton=new JButton("Add User");
-		addUserButton.setBounds(0,0,100,50);
+		editButton=new JButton("Edit User");
+		clearButton=new JButton("Clear Fields");
+		userDataPanel.add(clearButton);
+		userDataPanel.add(editButton);
 		userDataPanel.add(addUserButton);
 		
 		JPanel buttonPanel=new JPanel();
